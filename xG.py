@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from sklearn import linear_model
-from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.model_selection import cross_val_score
 
 from plot import Pitch
 
@@ -40,21 +40,21 @@ class ExpectedGoalsModel:
         return np.sqrt(delta_x.pow(2) + (100 - y).pow(2))
 
     @staticmethod
-    def _get_radians(delta_x, y):
+    def _get_shot_angle(delta_x, y):
         return np.arctan((delta_x / y).to_numpy())
 
     @staticmethod
     def _calc_features(data):
         data['delta_x'] = (data['x'] - 50).abs()
-        data['radians'] = ExpectedGoalsModel._get_radians(data['delta_x'], data['y']) / 1.58
-        data['goal_angle'] = ExpectedGoalsModel._get_goal_angle(data['x'], data['y']) / 1.58
+        data['shot_angle'] = ExpectedGoalsModel._get_shot_angle(data['delta_x'], data['y'])
+        data['goal_angle'] = ExpectedGoalsModel._get_goal_angle(data['x'], data['y'])
         data['distance'] = ExpectedGoalsModel._get_distance(data['delta_x'], data['y'])
 
         def scale_features():
             max_radians = 1.58
 
             data['goal_angle'] = data['goal_angle'] / max_radians
-            data['radians'] = data['radians'] / max_radians
+            data['shot_angle'] = data['shot_angle'] / max_radians
             data['distance'] = data['distance'] / data['distance'].max()
 
         scale_features()
@@ -64,7 +64,7 @@ class ExpectedGoalsModel:
         data = self._calc_features(data)
         return self.model.predict_proba(data[['goal_angle', 'header']])[:, 1].round(3)
 
-    def plot(self, pitch, figure, header=False, limit=None):
+    def plot(self, pitch, figure, header=False):
         points = pd.concat([pd.DataFrame({'x': x, 'y': range(1, 101)}) for x in range(1, 101)], ignore_index=True)
         points['header'] = bool(header)
         points['xG'] = self.predict(points)
@@ -73,7 +73,7 @@ class ExpectedGoalsModel:
         heatmap = pitch.ax.imshow(values.transpose(), cmap='GnBu', vmax=0.3,
                                   extent=[-0.2, 76 + 0.2, 0, 116 / 2 + 0.2])
 
-        fig.colorbar(heatmap)
+        figure.colorbar(heatmap)
 
 
 if __name__ == '__main__':
@@ -81,12 +81,11 @@ if __name__ == '__main__':
     xG_model = ExpectedGoalsModel(shot_events)
 
     fig, ax = plt.subplots()
-    p = Pitch(ax, plot=False)
+    p = Pitch(ax)
     xG_model.plot(p, fig)
 
     print(xG_model.score)
     plt.show()
-
 
 
 

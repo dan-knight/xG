@@ -6,18 +6,13 @@ import numpy as np
 
 
 class Pitch:
-    def __init__(self, ax, title=None, bg=None, plot=True):
+    def __init__(self, ax, title=None):
         self.ax = ax
         self.ax.set_title(title)
         self.ax.set_aspect('equal')
         self.ax.axis('off')
 
-        if bg is not None:
-            ax.add_patch(plt.Rectangle((0, 0), 1, 1, facecolor=bg,
-                                       transform=ax.transAxes, zorder=-1))
-
-        if plot:
-            self.draw_pitch()
+        self.draw_pitch()
 
     def draw_pitch(self):
         def plot_sidelines():
